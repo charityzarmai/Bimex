@@ -319,5 +319,17 @@
     "ariaPanel": "Panel de recompensas",
     "ariaUnlocked": "Ver recompensa: {{name}}",
     "ariaLocked": "Recompensa bloqueada: {{name}}. Requiere {{amount}} MXNe"
+  },
+  "tour": {
+    "step1": "Esta es tu wallet conectada. Tu dirección Stellar aparece aquí.",
+    "step2": "Explora proyectos de impacto social. Cada uno muestra su meta y progreso.",
+    "step3": "Haz clic en un proyecto para ver detalles y contribuir con MXNe.",
+    "step4": "Estás en testnet — usa el faucet para obtener MXNe de prueba gratis.",
+    "step5": "Aquí puedes ver tus contribuciones y el yield que has generado.",
+    "back": "Atrás",
+    "close": "Cerrar",
+    "last": "Finalizar",
+    "next": "Siguiente",
+    "skip": "Omitir"
   }
 }

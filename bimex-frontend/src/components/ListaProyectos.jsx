@@ -329,7 +329,7 @@ function CardProyecto({ proyecto, onClick }) {
 
   return (
     <article
-      className="card"
+      className="card project-card"
       role="listitem"
       style={{ ...estilos.card, opacity: estado === "Abandonado" ? 0.75 : 1 }}
       onClick={onClick}
