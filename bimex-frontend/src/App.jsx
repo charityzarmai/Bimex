@@ -12,7 +12,7 @@ import Transparencia    from "./components/Transparencia";
 import Changelog        from "./components/Changelog";
 import Terminos         from "./components/Terminos";
 import Privacidad       from "./components/Privacidad";
-import OnboardingTour, { shouldShowTour, resetTour } from "./components/OnboardingTour";
+import OnboardingTour, { shouldShowTour, restartTour } from "./components/OnboardingTour";
 import { getStorage }   from "./utils/storage";
 import { parsearError } from "./utils/errores";
 import { aplicarMeta, crearMetaProyecto, leerProyectoIdDesdePath } from "./utils/metaTags";
@@ -225,6 +225,7 @@ export default function App() {
   const [autoConectar,   setAutoConectar]   = useState(leerAutoConectarInicial);
   const [cerrandoSesion, setCerrandoSesion] = useState(false);
   const [totalInvertido, setTotalInvertido] = useState(null);
+  const [tourActivo,     setTourActivo]     = useState(false);
   const [runTour, setRunTour] = useState(false);
 
   // ── Toast system ───────────────────────────────────────────────────────────
@@ -299,7 +300,7 @@ export default function App() {
       
       // Trigger tour on first login
       if (shouldShowTour()) {
-        setTimeout(() => setRunTour(true), 800);
+        setTimeout(() => setTourActivo(true), 800);
       }
     } else {
       desconectarLocal();
@@ -348,7 +349,7 @@ export default function App() {
   return (
     <div>
       <ToastContainer toasts={toasts} onRemove={quitarToast} />
-      <OnboardingTour run={runTour} onComplete={() => setRunTour(false)} />
+      <OnboardingTour isActive={tourActivo} onComplete={() => setTourActivo(false)} />
       <nav className="navbar" aria-label="Navegación principal">
         {/* Logo + Nav tabs agrupados a la izquierda */}
         <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
@@ -400,8 +401,8 @@ export default function App() {
 
           <button
             onClick={() => {
-              resetTour();
-              setRunTour(true);
+              restartTour();
+              setTourActivo(true);
             }}
             style={{
               background: "var(--bg)",
@@ -415,8 +416,8 @@ export default function App() {
               cursor: "pointer",
               lineHeight: 1,
             }}
-            title="Reiniciar tour guiado"
-            aria-label="Reiniciar tour guiado"
+            title={t("tour.restart")}
+            aria-label={t("tour.restart")}
           >
             ?
           </button>
