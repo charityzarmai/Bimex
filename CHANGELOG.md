@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - SSE real-time updates: indexer pushes `proyecto_actualizado`, `nueva_contribucion`, `yield_reclamado` events to connected clients (#62)
 - Public changelog page accessible from the app footer (#81)
+- Sentry error tracking integration for production observability:
+  - Automatic error capture with stack traces and context
+  - PII filtering (wallet addresses, user IDs redacted)
+  - Error Boundary for React crashes with fallback UI
+  - Comprehensive error tagging in contract operations
+  - Graceful degradation when DSN not configured
+  - Session Replay for debugging (10% sample rate)
+  - Performance monitoring (10% trace sample rate)
 
 ---
 

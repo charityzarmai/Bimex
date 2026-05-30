@@ -10,6 +10,7 @@ import {
   scValToNative,
 } from "@stellar/stellar-sdk";
 import { signTransaction } from "@stellar/freighter-api";
+import * as Sentry from "@sentry/react";
 
 // ─── Configuración ────────────────────────────────────────────────────────────
 
@@ -68,13 +69,26 @@ async function simularLectura(metodo, args = []) {
   const resultado = await servidor.simulateTransaction(tx);
 
   if (rpc.Api.isSimulationError(resultado)) {
-    throw new Error(`Error en '${metodo}': ${resultado.error}`);
+    const error = new Error(`Error en '${metodo}': ${resultado.error}`);
+    Sentry.captureException(error, {
+      tags: { tipo: 'simulacion_lectura', metodo },
+      extra: { resultado },
+    });
+    throw error;
   }
   if (rpc.Api.isSimulationRestore(resultado)) {
-    throw new Error(`El contrato requiere restauración de TTL. Contacta al administrador.`);
+    const error = new Error(`El contrato requiere restauración de TTL. Contacta al administrador.`);
+    Sentry.captureException(error, {
+      tags: { tipo: 'ttl_restore', metodo },
+    });
+    throw error;
   }
   if (!resultado.result?.retval) {
-    throw new Error(`'${metodo}' no devolvió valor`);
+    const error = new Error(`'${metodo}' no devolvió valor`);
+    Sentry.captureException(error, {
+      tags: { tipo: 'sin_retval', metodo },
+    });
+    throw error;
   }
 
   return scValToNative(resultado.result.retval);
@@ -102,10 +116,19 @@ async function firmarYEnviar(txPreparada, cuentaPublica) {
   );
 
   if (errorFirma) {
-    throw new Error(`Freighter rechazó la firma: ${errorFirma?.message || JSON.stringify(errorFirma)}`);
+    const error = new Error(`Freighter rechazó la firma: ${errorFirma?.message || JSON.stringify(errorFirma)}`);
+    Sentry.captureException(error, {
+      tags: { tipo: 'firma_rechazada' },
+      extra: { errorFirma },
+    });
+    throw error;
   }
   if (!signedTxXdr) {
-    throw new Error("Freighter no devolvió una transacción firmada.");
+    const error = new Error("Freighter no devolvió una transacción firmada.");
+    Sentry.captureException(error, {
+      tags: { tipo: 'firma_vacia' },
+    });
+    throw error;
   }
 
   const txFirmada = TransactionBuilder.fromXDR(signedTxXdr, CONFIG.NETWORK_PASSPHRASE);
@@ -115,11 +138,21 @@ async function firmarYEnviar(txPreparada, cuentaPublica) {
     const motivo = envio.errorResult
       ? envio.errorResult.toXDR("base64")
       : "desconocido";
-    throw new Error(`La transacción fue rechazada por la red. Detalle: ${motivo}`);
+    const error = new Error(`La transacción fue rechazada por la red. Detalle: ${motivo}`);
+    Sentry.captureException(error, {
+      tags: { tipo: 'tx_rechazada' },
+      extra: { envio, motivo },
+    });
+    throw error;
   }
 
   if (!envio.hash) {
-    throw new Error(`La red no aceptó la transacción (status: ${envio.status}). Intenta de nuevo.`);
+    const error = new Error(`La red no aceptó la transacción (status: ${envio.status}). Intenta de nuevo.`);
+    Sentry.captureException(error, {
+      tags: { tipo: 'tx_sin_hash' },
+      extra: { envio },
+    });
+    throw error;
   }
 
   let intentos = 0;
@@ -129,11 +162,21 @@ async function firmarYEnviar(txPreparada, cuentaPublica) {
     if (estado.status === rpc.Api.GetTransactionStatus.SUCCESS) return estado;
     if (estado.status === rpc.Api.GetTransactionStatus.FAILED) {
       const xdrFallo = estado.resultXdr ? estado.resultXdr.toXDR("base64") : envio.hash;
-      throw new Error(`La transacción falló en la red. XDR: ${xdrFallo}`);
+      const error = new Error(`La transacción falló en la red. XDR: ${xdrFallo}`);
+      Sentry.captureException(error, {
+        tags: { tipo: 'tx_fallida' },
+        extra: { estado, hash: envio.hash },
+      });
+      throw error;
     }
     intentos++;
   }
-  throw new Error(`Tiempo de espera agotado. Verifica la TX en el explorador: ${envio.hash}`);
+  const error = new Error(`Tiempo de espera agotado. Verifica la TX en el explorador: ${envio.hash}`);
+  Sentry.captureException(error, {
+    tags: { tipo: 'tx_timeout' },
+    extra: { hash: envio.hash },
+  });
+  throw error;
 }
 
 // ─── Funciones de LECTURA ─────────────────────────────────────────────────────
@@ -158,7 +201,11 @@ export async function obtenerBalanceMXNe(direccion) {
     if (rpc.Api.isSimulationError(resultado)) return BigInt(0);
     if (!resultado.result?.retval) return BigInt(0);
     return BigInt(scValToNative(resultado.result.retval) ?? 0);
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { tipo: 'balance_error' },
+      extra: { direccion: '[REDACTED]' },
+    });
     return BigInt(0);
   }
 }
@@ -167,7 +214,10 @@ export async function obtenerTotalProyectos() {
   try {
     const total = await simularLectura("total_proyectos", []);
     return Number(total);
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { tipo: 'total_proyectos_error' },
+    });
     return 0;
   }
 }
@@ -227,7 +277,11 @@ export async function calcularYield(idProyecto, direccionBacker) {
       dirAScVal(direccionBacker),
     ]);
     return BigInt(raw ?? 0);
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { tipo: 'calcular_yield_error' },
+      extra: { idProyecto },
+    });
     return BigInt(0);
   }
 }
@@ -239,7 +293,11 @@ export async function obtenerAportacion(idProyecto, direccionBacker) {
       dirAScVal(direccionBacker),
     ]);
     return BigInt(raw?.cantidad ?? 0);
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { tipo: 'obtener_aportacion_error' },
+      extra: { idProyecto },
+    });
     return BigInt(0);
   }
 }
@@ -254,7 +312,11 @@ export async function calcularYieldDetallado(idProyecto) {
       amm:   BigInt(raw?.amm   ?? 0),
       total: BigInt(raw?.total ?? 0),
     };
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { tipo: 'calcular_yield_detallado_error' },
+      extra: { idProyecto },
+    });
     return { cetes: BigInt(0), amm: BigInt(0), total: BigInt(0) };
   }
 }
@@ -269,7 +331,11 @@ export async function obtenerEstadoCapital(idProyecto) {
       en_amm:   BigInt(raw?.en_amm   ?? 0),
       total:    BigInt(raw?.total    ?? 0),
     };
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { tipo: 'estado_capital_error' },
+      extra: { idProyecto },
+    });
     return { en_cetes: BigInt(0), en_amm: BigInt(0), total: BigInt(0) };
   }
 }
