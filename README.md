@@ -46,11 +46,26 @@ cargo test
 stellar contract build
 ```
 
+## Environments
+
+Bimex uses a three-environment deployment strategy:
+
+| Environment | Network | Branch | URL | Badge |
+|-------------|---------|--------|-----|-------|
+| **Development** | Testnet | `main` | [bimex-frontend.vercel.app](https://bimex-frontend.vercel.app) | Testnet |
+| **Staging** | Testnet | `staging` | [bimex-staging.vercel.app](https://bimex-staging.vercel.app) | STAGING + Testnet |
+| **Production** | Mainnet | `main` | TBD | - |
+
+**Workflow**: `feature branch` → PR → `staging` → QA validation → PR → `main` → production
+
+See [Staging Environment Guide](docs/staging-environment.md) for complete workflow documentation.
+
 ## Documentation
 
 | Document | Description |
 |---|---|
 | [Technical docs](DOCUMENTACION.txt) | Deployment, contract functions, lifecycle, changelog |
+| [Staging environment](docs/staging-environment.md) | QA workflow, deployment strategy, branch management |
 | [Contributor guide](docs/guia-contribuidor.md) | How to back a project as a user |
 | [Project creator guide](docs/guia-creador-proyecto.md) | How to launch a project on Bimex |
 | [Technical integration guide](docs/guia-tecnica-integracion.md) | ABI, CLI examples, JS SDK integration |

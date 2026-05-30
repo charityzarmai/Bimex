@@ -23,6 +23,7 @@ import "./index.css";
 const KEY_SESION_WALLET = "bimex.wallet.session";
 const storageSesion     = getStorage("session");
 const ADMIN_ADDRESS     = import.meta.env.VITE_ADMIN_ADDRESS ?? "GD2FLYXZMEGSSYZGC4LKFGCH6SOZR57UB64ECPEEJ4IEKAT6VZU3SLGS";
+const IS_STAGING        = import.meta.env.MODE === "staging";
 
 function leerAutoConectarInicial() {
   return storageSesion.getItem(KEY_SESION_WALLET) === "1";
@@ -331,6 +332,9 @@ export default function App() {
 
           {direccion && (
             <div className="navbar-actions">
+              {IS_STAGING && (
+                <span style={st.stagingBadge}>STAGING</span>
+              )}
               <span className="navbar-hide-tablet" style={st.testnetBadge}>Testnet</span>
 
               <BtnFaucet direccion={direccion} />
@@ -499,6 +503,9 @@ function Landing({ autoConectar, onConectado, onTransparencia, onChangelog, onTe
           <span className="navbar-logo">Bimex</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {IS_STAGING && (
+            <span style={st.stagingBadge}>STAGING</span>
+          )}
           <span className="navbar-hide-tablet" style={st.testnetBadge}>Testnet</span>
           <button
             onClick={onTransparencia}
@@ -701,6 +708,13 @@ const st = {
     textTransform: "uppercase", letterSpacing: "0.05em",
     background: "var(--amber-dim)", padding: "3px 10px",
     borderRadius: 99, border: "1px solid rgba(217,119,6,0.20)",
+    whiteSpace: "nowrap",
+  },
+  stagingBadge: {
+    fontSize: "0.72rem", fontWeight: 700, color: "#8B5CF6",
+    textTransform: "uppercase", letterSpacing: "0.05em",
+    background: "rgba(139,92,246,0.10)", padding: "3px 10px",
+    borderRadius: 99, border: "1px solid rgba(139,92,246,0.25)",
     whiteSpace: "nowrap",
   },
   langBtn: {
